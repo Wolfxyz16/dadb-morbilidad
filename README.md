@@ -112,3 +112,7 @@ spark-submit -master yarn-client script.py
 ### Entregables
 
 1. Código completo con los programas Apache Flume y Apache Spark Streaming.
+
+2. Memoria técnica (formato pdf) que incluya:
+
+    * Descripción de los datos que se obtienen desde 
