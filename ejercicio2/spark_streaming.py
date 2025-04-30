@@ -13,14 +13,16 @@ def haversine(lat1, lon1, lat2, lon2):
     return R * c
 
 def calculate_distance(rdd):
-    positions = rdd.collect()
     print("hola mundo")
+    positions = rdd.map(lambda linea: linea.strip().split(" - "))
+    positions = positions.filter(lambda partes: len(partes) == 2 and len(partes[1].split(",")) == 2)
+    positions = positions.collect()
+    print("lineas: ", positions)
+    print("tam entrada: ", len(positions))
     if len(positions) >= 2:
-	first = str(positions[0]).strip()
-	last = str(positions[-1]).strip()
+	first = positions[0]
+	last = positions[-1]
 
-	first = first.split(" - ")
-	last = last.split(" - ")
 	print("first: ", first)
 	
 	coordenadas_first = first[1].split(",")
