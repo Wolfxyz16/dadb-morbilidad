@@ -66,16 +66,6 @@ En este ejercicio, utilizaremos Apache Hadoop para analizar un conjunto de datos
 * Principales resultados y visualizaciones
 * Conclusiones más relevantes
 
-### Tareas MapReduce
-
-1. Municipios con mayor proporción de viviendas vacías
-
-2. Municipios con la mayor cantidad de viviendas de uso esporádico
-
-3. Municipios con la mayor mediana de consumo anual
-
-4. Municipios con mayor cantidad de viviendas que consumen más de 10 000 kwh al año
-
 ---
 
 ## Ejercicio 2, ISS
