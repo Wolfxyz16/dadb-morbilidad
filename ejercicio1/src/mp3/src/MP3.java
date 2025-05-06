@@ -2,7 +2,7 @@
 import java.io.IOException;
 
 // hadoop types
-import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.LongWritable;
 
@@ -17,27 +17,23 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 
-public class MP1 {
+public class MP3 {
 
-	/*
-	 * Calculate the town with the highest percentage of empty housing
-	 * e.g. (Dima_t, 855)
-	 * e.g. (Dima_e, 117)
-	 */
-
-	public static class MP1Mapper extends Mapper<LongWritable, Text, Text, Text> {
+	public static class MP3Mapper extends Mapper<LongWritable, Text, Text, IntWritable> {
 
 		public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
 			
+			// Suma de viviendas vacias por provincia
+			// Se devolverá el nombre del municipio y el número de viviendas vacias ordenado de mayor a menor
 			String line = value.toString();
 			String[] fields = line.split(";");
 
 			// We get the first char of the second word
-			// 't' or 'v' stands for totales and vacias
+			// 'v' stands for totales and vacias
 			char type = fields[1].split(" ")[1].charAt(0);
 			
-			// First we must check that "Consumo electrico" is "totales" or "vacias"
-			if( type != 't' && type != 'v' ) return;
+			// First we must check that "Consumo electrico" is "vacias"
+			if(  type != 'v' ) return;
 
 			// Now we remove the dots from the String that represents a number, 1.285 => 1285
 			fields[2] = fields[2].replace(".", "");
@@ -53,32 +49,28 @@ public class MP1 {
 			
 			// Code must be bigger than two in order to be a town, not a "comunidad"
 			if( code.length() > 2 ) {
+				String provinceCode = code.substring(0, 2);
+
 				context.write(
-						new Text(town),
-						new Text(String.valueOf(houses) + '_' + type)
+						new Text(provinceCode),
+						new IntWritable(houses)
 					);
 			}
 		}
 	}
 	
-	public static class MP1Reducer extends Reducer<Text, Text, Text, DoubleWritable> {
+	public static class MP3Reducer extends Reducer<Text, IntWritable, Text, IntWritable> {
 
-		public void reduce(Text townName, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+		public void reduce(Text provinceCode, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
 
-			int vacias = 0, totales = 1;
-			
-			for( Text value : values ) {
-				// We split the values in number of houses and type (vacias or totales)
-				String[] parts = value.toString().split("_");
-				int numHouses = Integer.parseInt(parts[0]);
-				char type = parts[1].charAt(0);
-				
-				// if the type match we store the houses number
-				if( type == 'v' ) vacias = numHouses;
-				else if ( type == 't' ) totales = numHouses;
+			int totalVacias = 0;
+
+			for (IntWritable value : values) {
+				totalVacias += value.get();
 			}
-			
-			context.write(townName, new DoubleWritable(Double.valueOf(vacias) / Double.valueOf(totales)));
+
+			// Emit the town code and the total number of empty houses
+			context.write(provinceCode, new IntWritable(totalVacias));
 		}
 	}
 
@@ -89,16 +81,16 @@ public class MP1 {
 		}
 		
 		Configuration conf = new Configuration();
-		Job job = Job.getInstance(conf, "Municipios con mayor porcentaje de viviendas vacias");
+		Job job = Job.getInstance(conf, "Viviendas vacias por provincia");
 		
-		job.setJarByClass(MP1.class);
-		job.setMapperClass(MP1Mapper.class);
-		job.setReducerClass(MP1Reducer.class);
+		job.setJarByClass(MP3.class);
+		job.setMapperClass(MP3Mapper.class);
+		job.setReducerClass(MP3Reducer.class);
 		
 		job.setMapOutputKeyClass(Text.class);
-		job.setMapOutputValueClass(Text.class);
+		job.setMapOutputValueClass(IntWritable.class);
 		job.setOutputKeyClass(Text.class);
-		job.setOutputValueClass(DoubleWritable.class);
+		job.setOutputValueClass(IntWritable.class);
 		
 		FileInputFormat.addInputPath(job, new Path(args[0]));
 		FileOutputFormat.setOutputPath(job, new Path(args[1]));
