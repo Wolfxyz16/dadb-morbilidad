@@ -28,33 +28,46 @@ public class MP2 {
 
 	public static class MP2Mapper extends Mapper<LongWritable, Text, Text, IntWritable> {
 
+		private TreeMap<Integer, String> tmap1;
+
+		@Override
+		public void setup(Context context) throws IOException, InterruptedException {
+			tmap1 = new TreeMap<Integer, String>();
+		}
+
 		@Override
 		public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
 			// Split csv file line
 			String line = value.toString();
 			String[] fields = line.split(";");
+			String town = fields[0];
 			
 			// Check if the line is "Vivienda de uso esporadico"
-			if( fields[1] != "Viviendas de uso esporádico" ) return;
+			if( !fields[1].equals("Viviendas de uso esporádico") ) return;
+			if( fields[0].charAt(2) == ' ' || fields[0].charAt(2) == 't') return;
 
 			// Now we remove the dots from the String that represents a number, 1.285 => 1285
 			fields[2] = fields[2].replace(".", "");
-
-			// Select the code and the number of houses
-			String[] code_plus_town = fields[0].split(" ");
-			String code = code_plus_town[0];
-
-			String town = code_plus_town[1];
 			int houses = Integer.parseInt(fields[2]);
-		
-			// Code must be bigger than two in order to be a town, not a "comunidad"
-			if( code.length() > 2 ) return;
 
-			context.write(new Text(town), new IntWritable(houses));
+			tmap1.put(houses, town);
+
+			// We must delete the first key if we get more than 10
+			if( tmap1.size() > 10 ) tmap1.remove(tmap1.firstKey());
+		}
+
+		@Override
+		public void cleanup(Context context) throws IOException, InterruptedException {
+			// Map the top 10 local
+			for( Map.Entry<Integer,String> entry : tmap1.entrySet() ) {
+				int houses = entry.getKey();
+				String town = entry.getValue();
+				context.write(new Text(town), new IntWritable(houses));
+			}
 		}
 	}
 	
-	public static class MP2Reducer extends Reducer<Text, IntWritable, IntWritable, Text> {
+	public static class MP2Reducer extends Reducer<Text, IntWritable, Text, IntWritable> {
 	
 		private TreeMap<Integer, String> tmap2;
 
@@ -69,7 +82,7 @@ public class MP2 {
 			int housesNumber = 0;
 			
 			for( IntWritable value : values ) {
-				if( housesNumber < value.get() ) housesNumber = value.get();
+				housesNumber = value.get();
 			}
 
 			tmap2.put(housesNumber, townName);
@@ -85,7 +98,7 @@ public class MP2 {
 			for( Map.Entry<Integer,String> entry : tmap2.entrySet() ) {
 				int houses = entry.getKey();
 				String town = entry.getValue();
-				context.write(new IntWritable(houses), new Text(town));
+				context.write(new Text(town), new IntWritable(houses));
 			}
 		}
 
@@ -109,8 +122,8 @@ public class MP2 {
 		// Change if neccesary
 		job.setMapOutputKeyClass(Text.class);
 		job.setMapOutputValueClass(IntWritable.class);
-		job.setOutputKeyClass(IntWritable.class);
-		job.setOutputValueClass(Text.class);
+		job.setOutputKeyClass(Text.class);
+		job.setOutputValueClass(IntWritable.class);
 		
 		FileInputFormat.addInputPath(job, new Path(args[0]));
 		FileOutputFormat.setOutputPath(job, new Path(args[1]));

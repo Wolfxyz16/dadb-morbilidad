@@ -54,7 +54,7 @@ public class MP1 {
 			// Code must be bigger than two in order to be a town, not a "comunidad"
 			if( code.length() > 2 ) {
 				context.write(
-						new Text(town),
+						new Text(fields[0].replace(' ', '-')),
 						new Text(String.valueOf(houses) + '_' + type)
 					);
 			}

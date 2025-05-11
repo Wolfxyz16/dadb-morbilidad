@@ -29,7 +29,7 @@ public class MP3 {
 			String[] fields = line.split(";");
 
 			// We get the first char of the second word
-			// 'v' stands for totales and vacias
+			// 'v' stands for vacias
 			char type = fields[1].split(" ")[1].charAt(0);
 			
 			// First we must check that "Consumo electrico" is "vacias"
@@ -38,23 +38,14 @@ public class MP3 {
 			// Now we remove the dots from the String that represents a number, 1.285 => 1285
 			fields[2] = fields[2].replace(".", "");
 
-			// 	We get:
-			//		* first number that appears on the line (code)
-			//		* town name
-			//		* the number of houses (third field)
-			String[] code_plus_town = fields[0].split(" ");
-			String code = code_plus_town[0];
-			String town = code_plus_town[1];
+			// We get the code (postal code) and the number of houses
+			String code = fields[0].split(" ")[0];
 			int houses = Integer.parseInt(fields[2]);
 			
 			// Code must be bigger than two in order to be a town, not a "comunidad"
 			if( code.length() > 2 ) {
 				String provinceCode = code.substring(0, 2);
-
-				context.write(
-						new Text(provinceCode),
-						new IntWritable(houses)
-					);
+				context.write(new Text(provinceCode), new IntWritable(houses));
 			}
 		}
 	}
